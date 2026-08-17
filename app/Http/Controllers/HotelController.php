@@ -45,11 +45,10 @@ class HotelController extends Controller
         // When the guest arrives from a search, price every room for those exact
         // dates so the figure on this page reconciles with the search card
         // (weekend nights are dearer, so the average differs from the base rate).
-        $pricing = $this->datedPricing(
-            $hotel,
-            $request->input('check_in'),
-            $request->input('check_out'),
-        );
+        $checkIn = $request->input('check_in');
+        $checkOut = $request->input('check_out');
+        $hasDates = $this->nightsInRange($checkIn, $checkOut) !== null;
+        $pricing = $this->datedPricing($hotel, $checkIn, $checkOut);
 
         return Inertia::render('hotels/show', [
             'hotel' => [
@@ -78,6 +77,9 @@ class HotelController extends Controller
                 'nightly_rate' => $pricing[$rt->id]['avg'] ?? (float) $rt->base_rate,
                 'nights' => $pricing[$rt->id]['nights'] ?? null,
                 'total_price' => $pricing[$rt->id]['total'] ?? null,
+                // null when browsing without dates; otherwise whether every night
+                // of the requested stay is available for this room type.
+                'available_for_dates' => $hasDates ? isset($pricing[$rt->id]) : null,
             ])->all(),
             'cancellation_policies' => $hotel->cancellationPolicies->map(fn ($p): array => [
                 'id' => $p->id,
@@ -124,28 +126,20 @@ class HotelController extends Controller
      */
     private function datedPricing(Hotel $hotel, ?string $checkIn, ?string $checkOut): array
     {
-        if ($checkIn === null || $checkOut === null) {
+        $nights = $this->nightsInRange($checkIn, $checkOut);
+
+        if ($nights === null) {
             return [];
         }
-
-        try {
-            $in = Carbon::parse($checkIn)->startOfDay();
-            $out = Carbon::parse($checkOut)->startOfDay();
-        } catch (\Exception) {
-            return [];
-        }
-
-        if ($out->lessThanOrEqualTo($in)) {
-            return [];
-        }
-
-        $nights = (int) $in->diffInDays($out);
 
         $rows = DB::table('availability')
             ->join('room_types', 'room_types.id', '=', 'availability.room_type_id')
             ->where('room_types.hotel_id', $hotel->id)
-            ->where('availability.date', '>=', $in->toDateString())
-            ->where('availability.date', '<', $out->toDateString())
+            ->where('availability.date', '>=', Carbon::parse($checkIn)->toDateString())
+            ->where('availability.date', '<', Carbon::parse($checkOut)->toDateString())
+            // Match search semantics: only nights with a room free count as
+            // available, so a sold-out night makes the stay unbookable.
+            ->where('availability.rooms_available', '>=', 1)
             ->groupBy('availability.room_type_id')
             ->select('availability.room_type_id')
             ->selectRaw('AVG(availability.rate) as avg_rate')
@@ -169,5 +163,29 @@ class HotelController extends Controller
         }
 
         return $pricing;
+    }
+
+    /**
+     * Number of nights in a half-open [check_in, check_out) range, or null when
+     * the dates are missing, unparseable or not in order.
+     */
+    private function nightsInRange(?string $checkIn, ?string $checkOut): ?int
+    {
+        if ($checkIn === null || $checkOut === null) {
+            return null;
+        }
+
+        try {
+            $in = Carbon::parse($checkIn)->startOfDay();
+            $out = Carbon::parse($checkOut)->startOfDay();
+        } catch (\Exception) {
+            return null;
+        }
+
+        if ($out->lessThanOrEqualTo($in)) {
+            return null;
+        }
+
+        return (int) $in->diffInDays($out);
     }
 }

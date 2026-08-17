@@ -39,6 +39,8 @@ interface RoomTypeInfo {
     nightly_rate: number;
     nights: number | null;
     total_price: number | null;
+    // null when browsing without dates; true/false once a stay is searched.
+    available_for_dates: boolean | null;
 }
 
 interface Props {
@@ -99,8 +101,14 @@ function BookingWidget({
     booking: Props['booking'];
     isAuthed: boolean;
 }) {
+    // A room whose stay could not be fully priced for the searched dates is not
+    // bookable; `null` means we are browsing without dates (everything shown).
+    const bookable = roomTypes.filter((r) => r.available_for_dates !== false);
+    const datesSearched = roomTypes.some((r) => r.available_for_dates !== null);
+    const noneAvailable = datesSearched && bookable.length === 0;
+
     const { data, setData, post, processing, errors } = useForm({
-        room_type_id: roomTypes[0]?.id ?? 0,
+        room_type_id: bookable[0]?.id ?? roomTypes[0]?.id ?? 0,
         check_in: booking.check_in ?? isoPlus(1),
         check_out: booking.check_out ?? isoPlus(4),
         guests: booking.guests ?? 2,
@@ -112,11 +120,33 @@ function BookingWidget({
     };
 
     const selected =
-        roomTypes.find((r) => r.id === data.room_type_id) ?? roomTypes[0];
+        roomTypes.find((r) => r.id === data.room_type_id) ??
+        bookable[0] ??
+        roomTypes[0];
     const field =
         'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20';
     const label =
         'mb-1 block text-xs font-medium tracking-wide text-muted-foreground uppercase';
+
+    if (noneAvailable) {
+        return (
+            <div className="rounded-xl border border-border bg-card p-5 text-center shadow-sm">
+                <p className="font-serif text-lg font-semibold text-foreground">
+                    No rooms available
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    This hotel is fully booked for your selected dates. Try a
+                    different date range.
+                </p>
+                <Link
+                    href="/"
+                    className="mt-4 inline-block rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                    New search
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <form
@@ -150,7 +180,7 @@ function BookingWidget({
                         }
                         className={`${field} cursor-pointer`}
                     >
-                        {roomTypes.map((room) => (
+                        {bookable.map((room) => (
                             <option key={room.id} value={room.id}>
                                 {room.name}
                             </option>
@@ -165,6 +195,7 @@ function BookingWidget({
                         <input
                             id="check_in"
                             type="date"
+                            required
                             min={isoPlus(0)}
                             value={data.check_in}
                             onChange={(e) =>
@@ -180,6 +211,7 @@ function BookingWidget({
                         <input
                             id="check_out"
                             type="date"
+                            required
                             min={data.check_in}
                             value={data.check_out}
                             onChange={(e) =>
@@ -343,12 +375,21 @@ export default function HotelShow({
                                 {room_types.map((room) => (
                                     <div
                                         key={room.id}
-                                        className="flex flex-col overflow-hidden rounded-xl border border-border bg-card sm:flex-row"
+                                        className={`flex flex-col overflow-hidden rounded-xl border border-border bg-card sm:flex-row${
+                                            room.available_for_dates === false
+                                                ? 'opacity-70'
+                                                : ''
+                                        }`}
                                     >
                                         <img
                                             src={roomImage(room.id)}
                                             alt={room.name}
-                                            className="h-44 w-full shrink-0 object-cover sm:h-auto sm:w-48"
+                                            className={`h-44 w-full shrink-0 object-cover sm:h-auto sm:w-48${
+                                                room.available_for_dates ===
+                                                false
+                                                    ? 'grayscale'
+                                                    : ''
+                                            }`}
                                         />
                                         <div className="flex flex-1 flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                                             <div>
@@ -367,28 +408,43 @@ export default function HotelShow({
                                                 </p>
                                             </div>
                                             <div className="shrink-0 sm:text-right">
-                                                <p className="font-serif text-xl font-semibold text-foreground">
-                                                    {money(room.nightly_rate)}
-                                                    <span className="text-sm font-normal text-muted-foreground">
-                                                        {' '}
-                                                        / night
+                                                {room.available_for_dates ===
+                                                false ? (
+                                                    <span className="inline-flex rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+                                                        Not available for these
+                                                        dates
                                                     </span>
-                                                </p>
-                                                {room.nights &&
-                                                room.total_price !== null ? (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {money(
-                                                            room.total_price,
-                                                        )}{' '}
-                                                        total · {room.nights}{' '}
-                                                        {room.nights === 1
-                                                            ? 'night'
-                                                            : 'nights'}
-                                                    </p>
                                                 ) : (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        from / night
-                                                    </p>
+                                                    <>
+                                                        <p className="font-serif text-xl font-semibold text-foreground">
+                                                            {money(
+                                                                room.nightly_rate,
+                                                            )}
+                                                            <span className="text-sm font-normal text-muted-foreground">
+                                                                {' '}
+                                                                / night
+                                                            </span>
+                                                        </p>
+                                                        {room.nights &&
+                                                        room.total_price !==
+                                                            null ? (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {money(
+                                                                    room.total_price,
+                                                                )}{' '}
+                                                                total ·{' '}
+                                                                {room.nights}{' '}
+                                                                {room.nights ===
+                                                                1
+                                                                    ? 'night'
+                                                                    : 'nights'}
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                from / night
+                                                            </p>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         </div>

@@ -89,6 +89,7 @@ export default function Welcome() {
                             <input
                                 id="check_in"
                                 type="date"
+                                required
                                 min={isoPlus(0)}
                                 value={form.check_in}
                                 onChange={(e) =>
@@ -107,6 +108,7 @@ export default function Welcome() {
                             <input
                                 id="check_out"
                                 type="date"
+                                required
                                 min={form.check_in}
                                 value={form.check_out}
                                 onChange={(e) =>
