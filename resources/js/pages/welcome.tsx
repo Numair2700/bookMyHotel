@@ -35,7 +35,7 @@ export default function Welcome() {
             {/* Hero */}
             <section className="relative isolate overflow-hidden">
                 <img
-                    src="/images/hotels/2.jpg"
+                    src="/images/hotels/covers/1.jpg"
                     alt=""
                     className="absolute inset-0 -z-10 h-full w-full object-cover"
                 />

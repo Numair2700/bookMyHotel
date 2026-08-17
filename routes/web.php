@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\HotelController as AdminHotelController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnquiryController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\Manager\AvailabilityController as ManagerAvailabilityController;
@@ -26,7 +27,7 @@ Route::inertia('contact', 'contact')->name('contact');
 Route::post('enquiries', [EnquiryController::class, 'store'])->middleware('throttle:10,1')->name('enquiries.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Reservations (FR6-FR8). A guest may only act on their own bookings.
     Route::get('reservations', [ReservationController::class, 'index'])->name('reservations.index');

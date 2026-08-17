@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { hotelImage } from '@/lib/hotel-image';
+import { hotelCover } from '@/lib/hotel-image';
 
 interface NightRow {
     stay_date: string;
@@ -251,7 +251,7 @@ export default function ReservationShow({
 
             <section className="relative isolate">
                 <img
-                    src={hotelImage(reservation.hotel_id ?? reservation.id)}
+                    src={hotelCover(reservation.hotel_id ?? reservation.id)}
                     alt=""
                     className="absolute inset-0 -z-10 h-full w-full object-cover"
                 />

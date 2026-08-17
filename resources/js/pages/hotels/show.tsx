@@ -10,7 +10,7 @@ import {
     Wifi,
 } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { hotelImage } from '@/lib/hotel-image';
+import { hotelCover, roomImage } from '@/lib/hotel-image';
 
 interface HotelInfo {
     id: number;
@@ -34,6 +34,11 @@ interface RoomTypeInfo {
     max_occupancy: number;
     base_rate: number;
     total_rooms: number;
+    // Priced for the searched dates; nights/total are null when browsing
+    // without dates, in which case nightly_rate falls back to the base rate.
+    nightly_rate: number;
+    nights: number | null;
+    total_price: number | null;
 }
 
 interface Props {
@@ -119,12 +124,18 @@ function BookingWidget({
             className="rounded-xl border border-border bg-card p-5 shadow-sm"
         >
             <p className="font-serif text-lg font-semibold text-foreground">
-                {selected ? money(selected.base_rate) : ''}
+                {selected ? money(selected.nightly_rate) : ''}
                 <span className="text-sm font-normal text-muted-foreground">
                     {' '}
-                    from / night
+                    {selected?.nights ? '/ night' : 'from / night'}
                 </span>
             </p>
+            {selected?.nights && selected.total_price !== null && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                    {money(selected.total_price)} total · {selected.nights}{' '}
+                    {selected.nights === 1 ? 'night' : 'nights'} for your dates
+                </p>
+            )}
 
             <div className="mt-4 space-y-3">
                 <div>
@@ -253,7 +264,7 @@ export default function HotelShow({
             {/* Hero */}
             <section className="relative isolate">
                 <img
-                    src={hotelImage(hotel.id)}
+                    src={hotelCover(hotel.id)}
                     alt={hotel.name}
                     className="absolute inset-0 -z-10 h-full w-full object-cover"
                 />
@@ -332,30 +343,54 @@ export default function HotelShow({
                                 {room_types.map((room) => (
                                     <div
                                         key={room.id}
-                                        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between"
+                                        className="flex flex-col overflow-hidden rounded-xl border border-border bg-card sm:flex-row"
                                     >
-                                        <div>
-                                            <h3 className="font-medium text-foreground">
-                                                {room.name}
-                                            </h3>
-                                            {room.description && (
-                                                <p className="mt-1 text-sm text-muted-foreground">
-                                                    {room.description}
+                                        <img
+                                            src={roomImage(room.id)}
+                                            alt={room.name}
+                                            className="h-44 w-full shrink-0 object-cover sm:h-auto sm:w-48"
+                                        />
+                                        <div className="flex flex-1 flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <h3 className="font-medium text-foreground">
+                                                    {room.name}
+                                                </h3>
+                                                {room.description && (
+                                                    <p className="mt-1 text-sm text-muted-foreground">
+                                                        {room.description}
+                                                    </p>
+                                                )}
+                                                <p className="mt-2 inline-flex items-center gap-1 text-sm text-muted-foreground">
+                                                    <Users className="h-3.5 w-3.5" />{' '}
+                                                    Sleeps up to{' '}
+                                                    {room.max_occupancy}
                                                 </p>
-                                            )}
-                                            <p className="mt-2 inline-flex items-center gap-1 text-sm text-muted-foreground">
-                                                <Users className="h-3.5 w-3.5" />{' '}
-                                                Sleeps up to{' '}
-                                                {room.max_occupancy}
-                                            </p>
-                                        </div>
-                                        <div className="shrink-0 text-right">
-                                            <p className="font-serif text-xl font-semibold text-foreground">
-                                                {money(room.base_rate)}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                from / night
-                                            </p>
+                                            </div>
+                                            <div className="shrink-0 sm:text-right">
+                                                <p className="font-serif text-xl font-semibold text-foreground">
+                                                    {money(room.nightly_rate)}
+                                                    <span className="text-sm font-normal text-muted-foreground">
+                                                        {' '}
+                                                        / night
+                                                    </span>
+                                                </p>
+                                                {room.nights &&
+                                                room.total_price !== null ? (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {money(
+                                                            room.total_price,
+                                                        )}{' '}
+                                                        total · {room.nights}{' '}
+                                                        {room.nights === 1
+                                                            ? 'night'
+                                                            : 'nights'}
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        from / night
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

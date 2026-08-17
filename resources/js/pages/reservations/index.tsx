@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { CalendarDays } from 'lucide-react';
-import { hotelImage } from '@/lib/hotel-image';
+import { hotelCover } from '@/lib/hotel-image';
 
 interface ReservationRow {
     id: number;
@@ -61,7 +61,7 @@ export default function ReservationsIndex({ reservations }: Props) {
                                     className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition hover:shadow-md"
                                 >
                                     <img
-                                        src={hotelImage(
+                                        src={hotelCover(
                                             reservation.hotel_id ??
                                                 reservation.id,
                                         )}

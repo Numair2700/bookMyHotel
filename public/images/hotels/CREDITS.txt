@@ -1,13 +1,20 @@
 Hotel placeholder photography
 ==============================
 
-The images in this folder (1.jpg … N.jpg) are used only as placeholder hotel
-photography for the demo. They are sourced from Pexels.com and used under the
-Pexels License, which permits free use for personal and commercial projects with
-no attribution required.
+The images in this folder are used only as placeholder hotel photography for the
+demo. They are sourced from Pexels.com and used under the Pexels License, which
+permits free use for personal and commercial projects with no attribution
+required.
+
+Layout
+------
+  covers/1.jpg … 8.jpg   Exterior / pool shots — represent the hotel itself
+                         (home hero, search cards, hotel hero, booking cards).
+  rooms/1.jpg  … 4.jpg   Interior shots — used on the room-type cards.
+
+They are mapped to hotels and room types deterministically at runtime (see
+resources/js/lib/hotel-image.ts, hotelCover() and roomImage()); no image data is
+stored in the database.
 
 Source:  https://www.pexels.com
 License: https://www.pexels.com/license/
-
-They are mapped to hotels deterministically at runtime (see
-resources/js/lib/hotel-image.ts); no image data is stored in the database.

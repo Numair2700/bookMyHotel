@@ -16,12 +16,27 @@ class DashboardTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-    public function test_authenticated_users_can_visit_the_dashboard()
+    public function test_a_guest_is_routed_to_their_bookings()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user);
+        $this->actingAs(User::factory()->create(['role' => 'guest']));
 
-        $response = $this->get(route('dashboard'));
-        $response->assertOk();
+        $this->get(route('dashboard'))
+            ->assertRedirect(route('reservations.index'));
+    }
+
+    public function test_a_manager_is_routed_to_the_manager_area()
+    {
+        $this->actingAs(User::factory()->create(['role' => 'manager']));
+
+        $this->get(route('dashboard'))
+            ->assertRedirect(route('manager.promotions.index'));
+    }
+
+    public function test_an_admin_is_routed_to_the_analytics_dashboard()
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+
+        $this->get(route('dashboard'))
+            ->assertRedirect(route('admin.analytics.index'));
     }
 }

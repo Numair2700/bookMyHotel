@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { Briefcase, Leaf, MapPin, Star, Users } from 'lucide-react';
-import { hotelImage } from '@/lib/hotel-image';
+import { hotelCover } from '@/lib/hotel-image';
 
 interface HotelInfo {
     id: number;
@@ -89,7 +89,7 @@ export default function SearchResults({ criteria, results, count }: Props) {
                             >
                                 <div className="relative aspect-[16/10] overflow-hidden">
                                     <img
-                                        src={hotelImage(result.hotel.id)}
+                                        src={hotelCover(result.hotel.id)}
                                         alt={result.hotel.name}
                                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                     />
