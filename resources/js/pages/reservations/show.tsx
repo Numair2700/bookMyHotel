@@ -5,6 +5,7 @@ import {
     CreditCard,
     Leaf,
     ShieldCheck,
+    Sparkles,
     Star,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -41,9 +42,27 @@ interface ReservationDetail {
     nights: NightRow[];
 }
 
+interface ServiceOption {
+    id: number;
+    name: string;
+    category: string;
+    price: number;
+}
+
+interface ServiceBookingRow {
+    id: number;
+    name: string;
+    service_date: string;
+    quantity: number;
+    unit_price: number;
+}
+
 interface Props {
     reservation: ReservationDetail;
     refund_quote: RefundQuote | null;
+    can_add_services: boolean;
+    services: ServiceOption[];
+    service_bookings: ServiceBookingRow[];
     can_review: boolean;
     review: {
         rating: number;
@@ -226,9 +245,134 @@ function ReviewPanel({ reservationId }: { reservationId: number }) {
     );
 }
 
+function ServicesPanel({
+    reservationId,
+    services,
+    booked,
+    canAdd,
+    checkIn,
+    checkOut,
+}: {
+    reservationId: number;
+    services: ServiceOption[];
+    booked: ServiceBookingRow[];
+    canAdd: boolean;
+    checkIn: string;
+    checkOut: string;
+}) {
+    const { data, setData, post, processing, errors } = useForm({
+        service_id: services[0]?.id ?? 0,
+        service_date: checkIn,
+        quantity: 1,
+    });
+
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        post(`/reservations/${reservationId}/services`, {
+            preserveScroll: true,
+        });
+    };
+
+    const field =
+        'w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20';
+    const serviceError = (errors as Record<string, string | undefined>).service;
+
+    return (
+        <div className="mt-6 rounded-xl border border-border bg-card p-6">
+            <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-foreground">
+                <Sparkles className="h-5 w-5 text-gold" /> Extras and services
+            </h2>
+
+            {booked.length > 0 ? (
+                <ul className="mt-4 space-y-2 text-sm">
+                    {booked.map((b) => (
+                        <li
+                            key={b.id}
+                            className="flex items-center justify-between border-b border-border/60 pb-2"
+                        >
+                            <span className="text-foreground">
+                                {b.name} · {b.service_date}
+                                {b.quantity > 1 ? ` × ${b.quantity}` : ''}
+                            </span>
+                            <span className="font-medium text-foreground">
+                                {money(b.unit_price * b.quantity)}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="mt-2 text-sm text-muted-foreground">
+                    No services added to this booking yet.
+                </p>
+            )}
+
+            {canAdd && services.length > 0 && (
+                <form onSubmit={submit} className="mt-4 space-y-3">
+                    {serviceError && (
+                        <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                            {serviceError}
+                        </p>
+                    )}
+                    <select
+                        aria-label="Service"
+                        value={data.service_id}
+                        onChange={(e) =>
+                            setData('service_id', Number(e.target.value))
+                        }
+                        className={`${field} cursor-pointer`}
+                    >
+                        {services.map((s) => (
+                            <option key={s.id} value={s.id}>
+                                {s.name} — {money(s.price)}
+                            </option>
+                        ))}
+                    </select>
+                    <div className="grid grid-cols-2 gap-3">
+                        <input
+                            type="date"
+                            required
+                            min={checkIn}
+                            max={checkOut}
+                            value={data.service_date}
+                            onChange={(e) =>
+                                setData('service_date', e.target.value)
+                            }
+                            className={field}
+                        />
+                        <input
+                            type="number"
+                            aria-label="Quantity"
+                            min={1}
+                            max={20}
+                            value={data.quantity}
+                            onChange={(e) =>
+                                setData(
+                                    'quantity',
+                                    Math.max(1, Number(e.target.value) || 1),
+                                )
+                            }
+                            className={field}
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="cursor-pointer rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                    >
+                        Add service
+                    </button>
+                </form>
+            )}
+        </div>
+    );
+}
+
 export default function ReservationShow({
     reservation,
     refund_quote,
+    can_add_services,
+    services,
+    service_bookings,
     can_review,
     review,
 }: Props) {
@@ -339,6 +483,17 @@ export default function ReservationShow({
                                 </div>
                             </dl>
                         </div>
+
+                        {(service_bookings.length > 0 || can_add_services) && (
+                            <ServicesPanel
+                                reservationId={reservation.id}
+                                services={services}
+                                booked={service_bookings}
+                                canAdd={can_add_services}
+                                checkIn={reservation.check_in}
+                                checkOut={reservation.check_out}
+                            />
+                        )}
 
                         {refund_quote && (
                             <div className="mt-6 rounded-xl border border-border bg-card p-6">

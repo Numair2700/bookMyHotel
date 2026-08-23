@@ -114,6 +114,9 @@ class HotelController extends Controller
                 'check_out' => $request->input('check_out'),
                 'guests' => $request->filled('guests') ? $request->integer('guests') : null,
             ],
+            // The signed-in guest's reward balance, so the booking widget can
+            // offer to redeem points against this stay (FR13).
+            'points_balance' => (int) ($request->user()?->reward_points_balance ?? 0),
         ]);
     }
 

@@ -78,6 +78,7 @@ interface Props {
         check_out: string | null;
         guests: number | null;
     };
+    points_balance: number;
 }
 
 const money = (n: number) =>
@@ -95,11 +96,13 @@ function BookingWidget({
     roomTypes,
     booking,
     isAuthed,
+    pointsBalance,
 }: {
     hotelId: number;
     roomTypes: RoomTypeInfo[];
     booking: Props['booking'];
     isAuthed: boolean;
+    pointsBalance: number;
 }) {
     // A room whose stay could not be fully priced for the searched dates is not
     // bookable; `null` means we are browsing without dates (everything shown).
@@ -112,6 +115,7 @@ function BookingWidget({
         check_in: booking.check_in ?? isoPlus(1),
         check_out: booking.check_out ?? isoPlus(4),
         guests: booking.guests ?? 2,
+        redeem_points: 0,
     });
 
     const submit = (e: FormEvent) => {
@@ -240,6 +244,38 @@ function BookingWidget({
                         ))}
                     </select>
                 </div>
+                {isAuthed && pointsBalance > 0 && (
+                    <div>
+                        <label className={label} htmlFor="redeem_points">
+                            Redeem points (you have {pointsBalance})
+                        </label>
+                        <input
+                            id="redeem_points"
+                            type="number"
+                            min={0}
+                            max={pointsBalance}
+                            value={data.redeem_points}
+                            onChange={(e) =>
+                                setData(
+                                    'redeem_points',
+                                    Math.max(
+                                        0,
+                                        Math.min(
+                                            pointsBalance,
+                                            Number(e.target.value) || 0,
+                                        ),
+                                    ),
+                                )
+                            }
+                            className={field}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {data.redeem_points > 0
+                                ? `− ${money(data.redeem_points)} off this stay`
+                                : '1 point = AED 1 off'}
+                        </p>
+                    </div>
+                )}
             </div>
 
             {((errors as Record<string, string | undefined>).availability ||
@@ -284,6 +320,7 @@ export default function HotelShow({
     services,
     average_rating,
     booking,
+    points_balance,
 }: Props) {
     const { auth } = usePage<{ auth: { user: unknown | null } }>().props;
     const policy = cancellation_policies[0];
@@ -496,6 +533,7 @@ export default function HotelShow({
                             roomTypes={room_types}
                             booking={booking}
                             isAuthed={Boolean(auth?.user)}
+                            pointsBalance={points_balance}
                         />
 
                         {policy && (

@@ -58,12 +58,17 @@ class ReservationController extends Controller
     {
         $this->authorize('view', $reservation);
 
-        $reservation->load(['hotel', 'nights', 'payments', 'review']);
+        $reservation->load(['hotel', 'nights', 'payments', 'review', 'serviceBookings.service']);
 
         // The refund the guest would get if they cancelled now (NFR8).
         $refundQuote = in_array($reservation->status, ['pending', 'confirmed'], true)
             ? $this->cancellation->quote($reservation)->toArray()
             : null;
+
+        // Services still on sale at this hotel, and any already added to the
+        // booking, so the guest can add ancillary services (FR9).
+        $canAddServices = in_array($reservation->status, ['pending', 'confirmed'], true);
+        $services = $reservation->hotel->services()->where('active', true)->get();
 
         return Inertia::render('reservations/show', [
             'reservation' => [
@@ -85,6 +90,20 @@ class ReservationController extends Controller
                 ])->all(),
             ],
             'refund_quote' => $refundQuote,
+            'can_add_services' => $canAddServices,
+            'services' => $services->map(fn ($service): array => [
+                'id' => $service->id,
+                'name' => $service->name,
+                'category' => $service->category,
+                'price' => (float) $service->price,
+            ])->all(),
+            'service_bookings' => $reservation->serviceBookings->map(fn ($booking): array => [
+                'id' => $booking->id,
+                'name' => $booking->service->name,
+                'service_date' => $booking->service_date->toDateString(),
+                'quantity' => $booking->quantity,
+                'unit_price' => (float) $booking->unit_price,
+            ])->all(),
             'can_review' => $reservation->status === 'completed' && $reservation->review === null,
             'review' => $reservation->review !== null ? [
                 'rating' => $reservation->review->rating,
