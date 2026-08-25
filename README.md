@@ -32,8 +32,8 @@ through events and listeners.
 ## Prerequisites
 
 - **PHP 8.4+** — although `composer.json` lists `^8.3`, the locked dependencies
-  (Laravel 13 / Symfony 8.1 components) require **PHP ≥ 8.4.1**. Developed on
-  8.4.11; CI runs on 8.4.
+  (Laravel 13 / Symfony 8.1 components) require **PHP ≥ 8.4.1**. Developed and
+  tested on PHP 8.4; CI runs on 8.4.
 - **Composer 2**
 - **Node.js 22+** and **npm**
 - **MySQL 8** (two schemas: one for the app, one for the tests)
