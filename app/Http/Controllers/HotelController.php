@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Hotel;
 use App\Models\Review;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
@@ -49,6 +50,7 @@ class HotelController extends Controller
         $checkOut = $request->input('check_out');
         $hasDates = $this->nightsInRange($checkIn, $checkOut) !== null;
         $pricing = $this->datedPricing($hotel, $checkIn, $checkOut);
+        $user = $request->user();
 
         return Inertia::render('hotels/show', [
             'hotel' => [
@@ -116,7 +118,7 @@ class HotelController extends Controller
             ],
             // The signed-in guest's reward balance, so the booking widget can
             // offer to redeem points against this stay (FR13).
-            'points_balance' => (int) ($request->user()?->reward_points_balance ?? 0),
+            'points_balance' => $user instanceof User ? (int) $user->reward_points_balance : 0,
         ]);
     }
 

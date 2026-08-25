@@ -6,12 +6,14 @@ use App\Exceptions\AvailabilityException;
 use App\Exceptions\CancellationException;
 use App\Http\Requests\StoreReservationRequest;
 use App\Models\Reservation;
+use App\Models\ServiceBooking;
 use App\Models\User;
 use App\Services\BookingService;
 use App\Services\CancellationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -97,10 +99,10 @@ class ReservationController extends Controller
                 'category' => $service->category,
                 'price' => (float) $service->price,
             ])->all(),
-            'service_bookings' => $reservation->serviceBookings->map(fn ($booking): array => [
+            'service_bookings' => $reservation->serviceBookings->map(fn (ServiceBooking $booking): array => [
                 'id' => $booking->id,
                 'name' => $booking->service->name,
-                'service_date' => $booking->service_date->toDateString(),
+                'service_date' => Carbon::parse((string) $booking->service_date)->toDateString(),
                 'quantity' => $booking->quantity,
                 'unit_price' => (float) $booking->unit_price,
             ])->all(),
