@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\HotelRequest;
 use App\Models\Hotel;
+use App\Models\HotelChain;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,16 +26,26 @@ class HotelController extends Controller
                 'id' => $hotel->id,
                 'name' => $hotel->name,
                 'chain' => $hotel->chain?->name,
+                'chain_id' => $hotel->chain_id,
                 'city' => $hotel->city,
                 'country' => $hotel->country,
                 'region' => $hotel->region,
+                'address' => $hotel->address,
+                'description' => $hotel->description,
                 'star_rating' => $hotel->star_rating,
+                'wifi_speed_mbps' => $hotel->wifi_speed_mbps,
+                'has_workspace' => $hotel->has_workspace,
                 'sustainability_certified' => $hotel->sustainability_certified,
                 'reservations_count' => $hotel->reservations_count,
             ]);
 
         return Inertia::render('admin/hotels/index', [
             'hotels' => $hotels->all(),
+            'chains' => HotelChain::query()->orderBy('name')->get(['id', 'name'])
+                ->map(fn (HotelChain $chain): array => [
+                    'id' => $chain->id,
+                    'name' => $chain->name,
+                ])->all(),
         ]);
     }
 
