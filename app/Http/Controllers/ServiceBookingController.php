@@ -33,14 +33,20 @@ class ServiceBookingController extends Controller
             return back()->withErrors(['service' => 'That service is not available for this hotel.']);
         }
 
+        $quantity = $request->integer('quantity');
+
         ServiceBooking::create([
             'reservation_id' => $reservation->id,
             'service_id' => $service->id,
             'service_date' => (string) $request->input('service_date'),
-            'quantity' => $request->integer('quantity'),
+            'quantity' => $quantity,
             // Snapshot the price at time of booking.
             'unit_price' => $service->price,
         ]);
+
+        // Ancillary services add to the amount payable for the stay (FR9) —
+        // this is the ancillary revenue stream in the business goals.
+        $reservation->increment('total_amount', (float) $service->price * $quantity);
 
         return back()->with('success', 'Service added to your booking.');
     }

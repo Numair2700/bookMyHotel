@@ -18,7 +18,10 @@ class ServiceBookingTest extends TestCase
     {
         $owner = User::factory()->create();
         $hotel = Hotel::factory()->create();
-        $reservation = Reservation::factory()->for($owner)->for($hotel)->create(['status' => 'confirmed']);
+        $reservation = Reservation::factory()->for($owner)->for($hotel)->create([
+            'status' => 'confirmed',
+            'total_amount' => 500,
+        ]);
         $service = Service::factory()->for($hotel)->create(['price' => 85]);
 
         $this->actingAs($owner)
@@ -35,6 +38,9 @@ class ServiceBookingTest extends TestCase
             'quantity' => 2,
             'unit_price' => 85.00, // snapshotted from the service price
         ]);
+
+        // The service cost (85 x 2) is added to the amount payable (FR9).
+        $this->assertEqualsWithDelta(670.0, (float) $reservation->fresh()->total_amount, 0.001);
     }
 
     public function test_a_stranger_cannot_add_a_service_to_someone_elses_reservation(): void

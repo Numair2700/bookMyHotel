@@ -380,6 +380,10 @@ export default function ReservationShow({
     const cancellable =
         reservation.status === 'pending' || reservation.status === 'confirmed';
     const confirmed = reservation.status === 'confirmed';
+    const servicesTotal = service_bookings.reduce(
+        (sum, b) => sum + b.unit_price * b.quantity,
+        0,
+    );
 
     const doCancel = () => {
         if (confirm('Cancel this reservation?')) {
@@ -475,6 +479,12 @@ export default function ReservationShow({
                                             −{' '}
                                             {money(reservation.discount_total)}
                                         </dd>
+                                    </div>
+                                )}
+                                {servicesTotal > 0 && (
+                                    <div className="flex justify-between text-muted-foreground">
+                                        <dt>Services</dt>
+                                        <dd>{money(servicesTotal)}</dd>
                                     </div>
                                 )}
                                 <div className="flex justify-between border-t border-border pt-2 font-serif text-lg font-semibold text-foreground">
